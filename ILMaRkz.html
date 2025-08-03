@@ -1,0 +1,1732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FireChat - Real-time Chat App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-color: #f093fb;
+            --accent-color: #4facfe;
+            --success-color: #00d4aa;
+            --warning-color: #ffc107;
+            --danger-color: #ff6b6b;
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f7fafc;
+            --bg-tertiary: #edf2f7;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+            --shadow-xl: 0 20px 40px rgba(0,0,0,0.1);
+            --border-radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        [data-theme="dark"] {
+            --text-primary: #f7fafc;
+            --text-secondary: #a0aec0;
+            --bg-primary: #1a202c;
+            --bg-secondary: #2d3748;
+            --bg-tertiary: #4a5568;
+            --border-color: #4a5568;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            transition: var(--transition);
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--primary-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-screen.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-animation {
+            text-align: center;
+            color: white;
+        }
+
+        .chat-bubble-loader {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .bubble {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.8);
+            margin: 0 5px;
+            animation: bubbleFloat 1.5s ease-in-out infinite;
+        }
+
+        .bubble-2 { animation-delay: 0.2s; }
+        .bubble-3 { animation-delay: 0.4s; }
+
+        @keyframes bubbleFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .loading-animation h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            animation: fadeInUp 1s ease;
+        }
+
+        .loading-animation p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            animation: fadeInUp 1s ease 0.2s both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Auth Screen */
+        .auth-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--primary-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: var(--transition);
+        }
+
+        .auth-screen.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .auth-container {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 3rem;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: var(--shadow-xl);
+            animation: slideInUp 0.6s ease;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo-animation {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1rem;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: logoSpin 2s ease-in-out infinite;
+        }
+
+        .logo-animation i {
+            font-size: 2rem;
+            color: white;
+        }
+
+        @keyframes logoSpin {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.1); }
+        }
+
+        .auth-header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .auth-header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .auth-tab {
+            flex: 1;
+            text-align: center;
+            padding: 0.75rem;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: var(--transition);
+            border-bottom: 3px solid transparent;
+        }
+
+        .auth-tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            transition: var(--transition);
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 1rem 1rem 1rem 3rem;
+            border: 2px solid transparent;
+            border-radius: var(--border-radius);
+            background: var(--bg-secondary);
+            font-size: 1rem;
+            transition: var(--transition);
+            outline: none;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .input-group input:focus + .input-underline,
+        .input-group select:focus + .input-underline {
+            transform: scaleX(1);
+        }
+
+        .input-underline {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--primary-gradient);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .auth-btn:active {
+            transform: translateY(0);
+        }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .toggle-auth {
+            color: var(--primary-color);
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .toggle-auth:hover {
+            text-decoration: underline;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            color: var(--text-secondary);
+        }
+
+        .divider::before,
+        .divider::after {
+            content: "";
+            flex: 1;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .divider::before {
+            margin-right: 1rem;
+        }
+
+        .divider::after {
+            margin-left: 1rem;
+        }
+
+        .social-auth {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .social-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .social-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .google-btn {
+            color: #DB4437;
+        }
+
+        .facebook-btn {
+            color: #4267B2;
+        }
+
+        .twitter-btn {
+            color: #1DA1F2;
+        }
+
+        .error-message {
+            color: var(--danger-color);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            text-align: center;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* Chat Screen */
+        .chat-screen {
+            display: none;
+            height: 100vh;
+            flex-direction: column;
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .chat-screen.show {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .chat-header {
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow-sm);
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--primary-color);
+        }
+
+        .logo i {
+            font-size: 1.5rem;
+        }
+
+        .online-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 212, 170, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 212, 170, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 212, 170, 0); }
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .logout-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+        }
+
+        .logout-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--danger-color);
+        }
+
+        .chat-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+        }
+
+        .sidebar.collapsed {
+            width: 0;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toggle-sidebar {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+
+        .toggle-sidebar:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .users-list {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 0.5rem;
+            transition: var(--transition);
+            animation: slideInLeft 0.3s ease;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .user-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .user-item .user-avatar {
+            width: 35px;
+            height: 35px;
+            font-size: 0.9rem;
+        }
+
+        .user-item .user-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .user-item .user-status {
+            margin-left: auto;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-color);
+        }
+
+        .sidebar-footer {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .theme-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .theme-btn:hover {
+            background: var(--bg-tertiary);
+        }
+
+        /* Chat Main */
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .messages-container {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+
+        .welcome-message {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-secondary);
+        }
+
+        .welcome-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1rem;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: bounce 2s infinite;
+        }
+
+        .welcome-icon i {
+            font-size: 2rem;
+            color: white;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        .welcome-message h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        /* Message Styles */
+        .message {
+            display: flex;
+            margin-bottom: 1rem;
+            animation: messageSlideIn 0.3s ease;
+            opacity: 0;
+            animation-fill-mode: forwards;
+        }
+
+        .message.own {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            background: var(--bg-secondary);
+            border-radius: 18px;
+            padding: 0.75rem 1rem;
+            position: relative;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+
+        .message.own .message-content {
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .message-content:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .message-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .message-username {
+            font-weight: 600;
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .message-text {
+            font-size: 0.95rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-top: 0.25rem;
+            text-align: right;
+        }
+
+        .message.own .message-time {
+            color: rgba(255,255,255,0.8);
+        }
+
+        @keyframes messageSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Message Input */
+        .message-input-container {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            position: relative;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-secondary);
+            border-radius: 25px;
+            padding: 0.5rem;
+            border: 2px solid transparent;
+            transition: var(--transition);
+        }
+
+        .input-wrapper:focus-within {
+            border-color: var(--primary-color);
+            box-shadow: var(--shadow-md);
+        }
+
+        #messageInput {
+            flex: 1;
+            border: none;
+            background: none;
+            outline: none;
+            padding: 0.5rem;
+            font-size: 1rem;
+            color: var(--text-primary);
+        }
+
+        #messageInput::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .input-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .send-btn {
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0.75rem;
+            border-radius: 50%;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-md);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .character-count {
+            text-align: right;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: absolute;
+                left: -300px;
+                height: 100%;
+                z-index: 200;
+            }
+
+            .sidebar.show {
+                left: 0;
+            }
+
+            .auth-container {
+                padding: 2rem;
+                margin: 1rem;
+            }
+
+            .header-left {
+                gap: 1rem;
+            }
+
+            .online-status {
+                display: none;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .chat-header {
+                padding: 0.75rem 1rem;
+            }
+
+            .auth-header h1 {
+                font-size: 1.8rem;
+            }
+
+            .features {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .feature {
+                flex-direction: row;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-animation">
+            <div class="chat-bubble-loader">
+                <div class="bubble bubble-1"></div>
+                <div class="bubble bubble-2"></div>
+                <div class="bubble bubble-3"></div>
+            </div>
+            <h2>FireChat</h2>
+            <p>Connecting to the universe...</p>
+        </div>
+    </div>
+
+    <!-- Auth Screen -->
+    <div id="authScreen" class="auth-screen">
+        <div class="auth-container">
+            <div class="auth-header">
+                <div class="logo-animation">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <h1>Welcome to FireChat</h1>
+                <p>Connect with friends in real-time</p>
+            </div>
+            
+            <div class="auth-tabs">
+                <div class="auth-tab active" data-tab="login">Sign In</div>
+                <div class="auth-tab" data-tab="signup">Sign Up</div>
+            </div>
+            
+            <!-- Login Form -->
+            <form id="loginForm" class="auth-form active">
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="loginEmail" placeholder="Enter your email" required>
+                    <div class="input-underline"></div>
+                </div>
+                
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                    <div class="input-underline"></div>
+                </div>
+                
+                <div id="loginError" class="error-message"></div>
+                
+                <button type="submit" class="auth-btn">
+                    <span>Sign In</span>
+                    <i class="fas fa-sign-in-alt"></i>
+                </button>
+                
+                <div class="divider">or</div>
+                
+                <div class="social-auth">
+                    <button type="button" class="social-btn google-btn" id="googleLogin">
+                        <i class="fab fa-google"></i>
+                    </button>
+                    <button type="button" class="social-btn facebook-btn" id="facebookLogin">
+                        <i class="fab fa-facebook-f"></i>
+                    </button>
+                    <button type="button" class="social-btn twitter-btn" id="twitterLogin">
+                        <i class="fab fa-twitter"></i>
+                    </button>
+                </div>
+                
+                <div class="auth-footer">
+                    <span>Don't have an account? </span>
+                    <span class="toggle-auth" data-tab="signup">Sign Up</span>
+                </div>
+            </form>
+            
+            <!-- Sign Up Form -->
+            <form id="signupForm" class="auth-form">
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="signupUsername" placeholder="Choose a username" required>
+                    <div class="input-underline"></div>
+                </div>
+                
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="signupEmail" placeholder="Enter your email" required>
+                    <div class="input-underline"></div>
+                </div>
+                
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="signupPassword" placeholder="Create a password" required>
+                    <div class="input-underline"></div>
+                </div>
+                
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="signupConfirmPassword" placeholder="Confirm password" required>
+                    <div class="input-underline"></div>
+                </div>
+                
+                <div class="input-group">
+                    <i class="fas fa-palette"></i>
+                    <select id="userColor" required>
+                        <option value="">Choose your color</option>
+                        <option value="#FF6B6B">Coral Red</option>
+                        <option value="#4ECDC4">Turquoise</option>
+                        <option value="#45B7D1">Ocean Blue</option>
+                        <option value="#96CEB4">Mint Green</option>
+                        <option value="#FFEAA7">Sunny Yellow</option>
+                        <option value="#DDA0DD">Lavender</option>
+                        <option value="#FF8C69">Salmon</option>
+                        <option value="#20B2AA">Light Sea Green</option>
+                    </select>
+                    <div class="input-underline"></div>
+                </div>
+                
+                <div id="signupError" class="error-message"></div>
+                
+                <button type="submit" class="auth-btn">
+                    <span>Sign Up</span>
+                    <i class="fas fa-user-plus"></i>
+                </button>
+                
+                <div class="auth-footer">
+                    <span>Already have an account? </span>
+                    <span class="toggle-auth" data-tab="login">Sign In</span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Chat Screen -->
+    <div id="chatScreen" class="chat-screen">
+        <!-- Header -->
+        <header class="chat-header">
+            <div class="header-left">
+                <div class="logo">
+                    <i class="fas fa-comments"></i>
+                    <span>FireChat</span>
+                </div>
+                <div class="online-status">
+                    <div class="status-dot"></div>
+                    <span id="onlineCount">0 online</span>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="user-info">
+                    <div class="user-avatar" id="currentUserAvatar">
+                        <span id="currentUserInitial"></span>
+                    </div>
+                    <span id="currentUsername"></span>
+                </div>
+                <button id="logoutBtn" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Chat Area -->
+        <div class="chat-container">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h3><i class="fas fa-users"></i> Online Users</h3>
+                    <button id="toggleSidebar" class="toggle-sidebar">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                </div>
+                <div id="usersList" class="users-list"></div>
+                
+                <div class="sidebar-footer">
+                    <div class="theme-switcher">
+                        <button id="themeToggle" class="theme-btn">
+                            <i class="fas fa-moon"></i>
+                            <span>Dark Mode</span>
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Chat Main -->
+            <div class="chat-main">
+                <div id="messagesContainer" class="messages-container">
+                    <div class="welcome-message">
+                        <div class="welcome-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <h3>Welcome to FireChat</h3>
+                        <p>Start chatting with your friends in real-time!</p>
+                    </div>
+                </div>
+                
+                <div class="message-input-container">
+                    <div class="input-wrapper">
+                        <input type="text" id="messageInput" placeholder="Type a message...">
+                        <div class="input-actions">
+                            <button id="sendBtn" class="send-btn">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="character-count">
+                        <span id="charCount">0/200</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-analytics-compat.js"></script>
+
+    <script>
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDF552-PbkUtTjBzq6Z0GXdhDFivGk1b6s",
+            authDomain: "chat-app-e0bff.firebaseapp.com",
+            databaseURL: "https://chat-app-e0bff-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "chat-app-e0bff",
+            storageBucket: "chat-app-e0bff.appspot.com",
+            messagingSenderId: "558581002252",
+            appId: "1:558581002252:web:13f2627a183b068d64be29",
+            measurementId: "G-0TST6T87Y4"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const analytics = firebase.analytics();
+        const auth = firebase.auth();
+        const database = firebase.database();
+
+        // DOM Elements
+        const loadingScreen = document.getElementById('loadingScreen');
+        const authScreen = document.getElementById('authScreen');
+        const chatScreen = document.getElementById('chatScreen');
+        
+        // Auth elements
+        const authTabs = document.querySelectorAll('.auth-tab');
+        const authForms = document.querySelectorAll('.auth-form');
+        const toggleAuthLinks = document.querySelectorAll('.toggle-auth');
+        
+        // Login form
+        const loginForm = document.getElementById('loginForm');
+        const loginEmail = document.getElementById('loginEmail');
+        const loginPassword = document.getElementById('loginPassword');
+        const loginError = document.getElementById('loginError');
+        
+        // Signup form
+        const signupForm = document.getElementById('signupForm');
+        const signupUsername = document.getElementById('signupUsername');
+        const signupEmail = document.getElementById('signupEmail');
+        const signupPassword = document.getElementById('signupPassword');
+        const signupConfirmPassword = document.getElementById('signupConfirmPassword');
+        const userColor = document.getElementById('userColor');
+        const signupError = document.getElementById('signupError');
+        
+        // Social login buttons
+        const googleLogin = document.getElementById('googleLogin');
+        const facebookLogin = document.getElementById('facebookLogin');
+        const twitterLogin = document.getElementById('twitterLogin');
+        
+        // Chat elements
+        const currentUsername = document.getElementById('currentUsername');
+        const currentUserInitial = document.getElementById('currentUserInitial');
+        const currentUserAvatar = document.getElementById('currentUserAvatar');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const usersList = document.getElementById('usersList');
+        const onlineCount = document.getElementById('onlineCount');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const charCount = document.getElementById('charCount');
+        const toggleSidebar = document.getElementById('toggleSidebar');
+        const sidebar = document.querySelector('.sidebar');
+        const themeToggle = document.getElementById('themeToggle');
+
+        // App State
+        let currentUser = null;
+        let usersRef;
+        let messagesRef;
+        let presenceRef;
+
+        // Initialize the app
+        function initApp() {
+            // Hide loading screen after 2 seconds
+            setTimeout(() => {
+                loadingScreen.classList.add('fade-out');
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                    
+                    // Check auth state
+                    auth.onAuthStateChanged(user => {
+                        if (user) {
+                            // User is signed in
+                            handleAuthSuccess(user);
+                        } else {
+                            // No user is signed in
+                            authScreen.classList.add('show');
+                        }
+                    });
+                }, 500);
+            }, 2000);
+
+            // Set up event listeners
+            setupEventListeners();
+        }
+
+        // Set up all event listeners
+        function setupEventListeners() {
+            // Auth tab switching
+            authTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.getAttribute('data-tab');
+                    switchAuthTab(tabName);
+                });
+            });
+            
+            // Toggle between login/signup
+            toggleAuthLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    const tabName = link.getAttribute('data-tab');
+                    switchAuthTab(tabName);
+                });
+            });
+            
+            // Login form submission
+            loginForm.addEventListener('submit', handleLogin);
+            
+            // Signup form submission
+            signupForm.addEventListener('submit', handleSignup);
+            
+            // Social login buttons
+            googleLogin.addEventListener('click', signInWithGoogle);
+            facebookLogin.addEventListener('click', signInWithFacebook);
+            twitterLogin.addEventListener('click', signInWithTwitter);
+            
+            // Logout button
+            logoutBtn.addEventListener('click', handleLogout);
+            
+            // Send message
+            sendBtn.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            // Character count
+            messageInput.addEventListener('input', updateCharacterCount);
+            
+            // Toggle sidebar
+            toggleSidebar.addEventListener('click', () => {
+                sidebar.classList.toggle('collapsed');
+                const icon = toggleSidebar.querySelector('i');
+                icon.classList.toggle('fa-chevron-left');
+                icon.classList.toggle('fa-chevron-right');
+            });
+            
+            // Theme toggle
+            themeToggle.addEventListener('click', toggleTheme);
+        }
+        
+        // Switch between login and signup tabs
+        function switchAuthTab(tabName) {
+            authTabs.forEach(tab => {
+                if (tab.getAttribute('data-tab') === tabName) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+            
+            authForms.forEach(form => {
+                if (form.id === `${tabName}Form`) {
+                    form.classList.add('active');
+                } else {
+                    form.classList.remove('active');
+                }
+            });
+            
+            // Clear errors when switching tabs
+            loginError.textContent = '';
+            signupError.textContent = '';
+            loginError.classList.remove('show');
+            signupError.classList.remove('show');
+        }
+
+        // Handle user login
+        function handleLogin(e) {
+            e.preventDefault();
+            
+            const email = loginEmail.value.trim();
+            const password = loginPassword.value.trim();
+            
+            // Validate inputs
+            if (!email || !password) {
+                showLoginError('Please enter both email and password');
+                return;
+            }
+            
+            // Sign in with email and password
+            auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Signed in successfully
+                    handleAuthSuccess(userCredential.user);
+                })
+                .catch((error) => {
+                    // Handle errors
+                    showLoginError(getAuthErrorMessage(error));
+                });
+        }
+        
+        // Handle user signup
+        function handleSignup(e) {
+            e.preventDefault();
+            
+            const username = signupUsername.value.trim();
+            const email = signupEmail.value.trim();
+            const password = signupPassword.value.trim();
+            const confirmPassword = signupConfirmPassword.value.trim();
+            const color = userColor.value;
+            
+            // Validate inputs
+            if (!username || !email || !password || !confirmPassword || !color) {
+                showSignupError('Please fill in all fields');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showSignupError('Passwords do not match');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showSignupError('Password must be at least 6 characters');
+                return;
+            }
+            
+            // Create user with email and password
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // User created successfully
+                    const user = userCredential.user;
+                    
+                    // Create user profile in database
+                    return database.ref('users/' + user.uid).set({
+                        username: username,
+                        email: email,
+                        color: color,
+                        isOnline: true,
+                        lastActive: firebase.database.ServerValue.TIMESTAMP
+                    });
+                })
+                .then(() => {
+                    // Auth success will be handled by the auth state listener
+                })
+                .catch((error) => {
+                    // Handle errors
+                    showSignupError(getAuthErrorMessage(error));
+                });
+        }
+        
+        // Sign in with Google
+        function signInWithGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            signInWithPopup(provider);
+        }
+        
+        // Sign in with Facebook
+        function signInWithFacebook() {
+            const provider = new firebase.auth.FacebookAuthProvider();
+            signInWithPopup(provider);
+        }
+        
+        // Sign in with Twitter
+        function signInWithTwitter() {
+            const provider = new firebase.auth.TwitterAuthProvider();
+            signInWithPopup(provider);
+        }
+        
+        // Generic function for social login with popup
+        function signInWithPopup(provider) {
+            auth.signInWithPopup(provider)
+                .then((result) => {
+                    // This gives you a Google/Facebook/Twitter Access Token
+                    const credential = result.credential;
+                    const token = credential.accessToken;
+                    
+                    // The signed-in user info
+                    const user = result.user;
+                    
+                    // Check if this is a new user
+                    if (result.additionalUserInfo.isNewUser) {
+                        // Create user profile in database
+                        return database.ref('users/' + user.uid).set({
+                            username: user.displayName || 'Anonymous',
+                            email: user.email || '',
+                            color: getRandomColor(),
+                            isOnline: true,
+                            lastActive: firebase.database.ServerValue.TIMESTAMP
+                        });
+                    }
+                })
+                .catch((error) => {
+                    // Handle Errors here
+                    const errorMessage = getAuthErrorMessage(error);
+                    
+                    // Show error in the active form
+                    if (loginForm.classList.contains('active')) {
+                        showLoginError(errorMessage);
+                    } else {
+                        showSignupError(errorMessage);
+                    }
+                });
+        }
+        
+        // Handle successful authentication
+        function handleAuthSuccess(user) {
+            // Hide auth screen
+            authScreen.classList.remove('show');
+            
+            // Initialize Firebase references
+            usersRef = database.ref('users/' + user.uid);
+            messagesRef = database.ref('messages');
+            presenceRef = database.ref('.info/connected');
+            
+            // Get user data from database
+            database.ref('users/' + user.uid).once('value')
+                .then((snapshot) => {
+                    const userData = snapshot.val();
+                    
+                    // Set current user
+                    currentUser = {
+                        id: user.uid,
+                        name: userData.username || user.displayName || 'Anonymous',
+                        email: user.email,
+                        color: userData.color || getRandomColor(),
+                        isOnline: true
+                    };
+                    
+                    // Update user status in Firebase
+                    usersRef.update({
+                        isOnline: true,
+                        lastActive: firebase.database.ServerValue.TIMESTAMP
+                    });
+                    
+                    // Set up presence detection
+                    setupPresence();
+                    
+                    // Show chat screen
+                    chatScreen.classList.add('show');
+                    
+                    // Update UI with user info
+                    currentUsername.textContent = currentUser.name;
+                    currentUserInitial.textContent = currentUser.name.charAt(0).toUpperCase();
+                    currentUserAvatar.style.backgroundColor = currentUser.color;
+                    
+                    // Load messages and users
+                    loadMessages();
+                    loadUsers();
+                });
+        }
+        
+        // Set up presence detection
+        function setupPresence() {
+            presenceRef.on('value', (snapshot) => {
+                if (snapshot.val()) {
+                    // User is online
+                    usersRef.update({
+                        isOnline: true,
+                        lastActive: firebase.database.ServerValue.TIMESTAMP
+                    });
+                    
+                    // Set up disconnect handler
+                    usersRef.onDisconnect().update({
+                        isOnline: false,
+                        lastActive: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+            });
+        }
+        
+        // Load messages from Firebase
+        function loadMessages() {
+            messagesRef.limitToLast(100).on('child_added', (snapshot) => {
+                const message = snapshot.val();
+                displayMessage(message);
+                scrollToBottom();
+            });
+        }
+        
+        // Load users from Firebase
+        function loadUsers() {
+            database.ref('users').on('value', (snapshot) => {
+                const users = snapshot.val() || {};
+                updateUsersList(users);
+                updateOnlineCount(users);
+            });
+        }
+        
+        // Update users list in sidebar
+        function updateUsersList(users) {
+            usersList.innerHTML = '';
+            
+            Object.entries(users).forEach(([id, user]) => {
+                if (user.isOnline && id !== currentUser.id) {
+                    const userElement = document.createElement('div');
+                    userElement.className = 'user-item';
+                    userElement.innerHTML = `
+                        <div class="user-avatar" style="background-color: ${user.color}">
+                            <span>${user.username.charAt(0).toUpperCase()}</span>
+                        </div>
+                        <span class="user-name">${user.username}</span>
+                        <div class="user-status"></div>
+                    `;
+                    usersList.appendChild(userElement);
+                }
+            });
+        }
+        
+        // Update online users count
+        function updateOnlineCount(users) {
+            const online = Object.values(users).filter(user => user.isOnline).length;
+            onlineCount.textContent = `${online} online`;
+        }
+        
+        // Display a message in the chat
+        function displayMessage(message) {
+            // Remove welcome message if it's the first message
+            const welcomeMessage = document.querySelector('.welcome-message');
+            if (welcomeMessage) {
+                welcomeMessage.remove();
+            }
+            
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${message.userId === currentUser.id ? 'own' : ''}`;
+            
+            messageElement.innerHTML = `
+                <div class="message-content">
+                    <div class="message-header">
+                        <div class="message-avatar" style="background-color: ${message.userColor}">
+                            ${message.userName.charAt(0).toUpperCase()}
+                        </div>
+                        <span class="message-username">${message.userName}</span>
+                    </div>
+                    <p class="message-text">${message.text}</p>
+                    <div class="message-time">${formatTime(message.timestamp)}</div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageElement);
+        }
+        
+        // Send a new message
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            
+            if (!text || !currentUser) return;
+            
+            // Create message object
+            const message = {
+                userId: currentUser.id,
+                userName: currentUser.name,
+                userColor: currentUser.color,
+                text: text,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            };
+            
+            // Push to Firebase
+            messagesRef.push(message)
+                .then(() => {
+                    // Clear input
+                    messageInput.value = '';
+                    updateCharacterCount();
+                    scrollToBottom();
+                })
+                .catch((error) => {
+                    console.error('Error sending message:', error);
+                });
+        }
+        
+        // Handle user logout
+        function handleLogout() {
+            if (currentUser) {
+                // Update user status in Firebase
+                usersRef.update({
+                    isOnline: false,
+                    lastActive: firebase.database.ServerValue.TIMESTAMP
+                });
+                
+                // Sign out
+                auth.signOut()
+                    .then(() => {
+                        // Remove all Firebase listeners
+                        database.ref('users').off();
+                        if (messagesRef) messagesRef.off();
+                        
+                        // Reset app state
+                        currentUser = null;
+                        usersRef = null;
+                        messagesRef = null;
+                        presenceRef = null;
+                        
+                        // Clear UI
+                        messagesContainer.innerHTML = `
+                            <div class="welcome-message">
+                                <div class="welcome-icon">
+                                    <i class="fas fa-comments"></i>
+                                </div>
+                                <h3>Welcome to FireChat</h3>
+                                <p>Start chatting with your friends in real-time!</p>
+                            </div>
+                        `;
+                        usersList.innerHTML = '';
+                        onlineCount.textContent = '0 online';
+                        
+                        // Clear form inputs
+                        loginEmail.value = '';
+                        loginPassword.value = '';
+                        signupUsername.value = '';
+                        signupEmail.value = '';
+                        signupPassword.value = '';
+                        signupConfirmPassword.value = '';
+                        userColor.value = '';
+                        
+                        // Transition to auth screen
+                        chatScreen.classList.remove('show');
+                        authScreen.classList.add('show');
+                        switchAuthTab('login');
+                    })
+                    .catch((error) => {
+                        console.error('Error signing out:', error);
+                    });
+            }
+        }
+        
+        // Show login error
+        function showLoginError(message) {
+            loginError.textContent = message;
+            loginError.classList.add('show');
+        }
+        
+        // Show signup error
+        function showSignupError(message) {
+            signupError.textContent = message;
+            signupError.classList.add('show');
+        }
+        
+        // Get friendly auth error messages
+        function getAuthErrorMessage(error) {
+            switch (error.code) {
+                case 'auth/email-already-in-use':
+                    return 'Email is already in use by another account';
+                case 'auth/invalid-email':
+                    return 'Email address is invalid';
+                case 'auth/operation-not-allowed':
+                    return 'Email/password accounts are not enabled';
+                case 'auth/weak-password':
+                    return 'Password is too weak';
+                case 'auth/user-disabled':
+                    return 'This account has been disabled';
+                case 'auth/user-not-found':
+                    return 'No account found with this email';
+                case 'auth/wrong-password':
+                    return 'Incorrect password';
+                case 'auth/popup-closed-by-user':
+                    return 'Popup was closed before completing sign in';
+                case 'auth/cancelled-popup-request':
+                case 'auth/popup-blocked':
+                    return 'Popup was blocked by your browser';
+                default:
+                    return error.message || 'An error occurred. Please try again.';
+            }
+        }
+        
+        // Update character count
+        function updateCharacterCount() {
+            const count = messageInput.value.length;
+            charCount.textContent = `${count}/200`;
+        }
+        
+        // Scroll to bottom of messages
+        function scrollToBottom() {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        // Toggle dark/light theme
+        function toggleTheme() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+            
+            const icon = themeToggle.querySelector('i');
+            const text = themeToggle.querySelector('span');
+            
+            if (isDark) {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+                text.textContent = 'Dark Mode';
+            } else {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+                text.textContent = 'Light Mode';
+            }
+        }
+        
+        // Helper function to generate random color
+        function getRandomColor() {
+            const colors = [
+                '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', 
+                '#FFEAA7', '#DDA0DD', '#FF8C69', '#20B2AA'
+            ];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+        
+        // Helper function to format time
+        function formatTime(timestamp) {
+            if (!timestamp) return '';
+            
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
